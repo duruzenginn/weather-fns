@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Weather Finder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { --pad: 16px; }
+    body { font-family: system-ui, sans-serif; padding: var(--pad); max-width: 760px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; }
+    .muted { color: #666; font-size: 14px; margin-bottom: 10px; }
+    form { display: flex; gap: 8px; margin: 12px 0 16px; flex-wrap: wrap; }
+    input, button, select { font-size: 16px; padding: 10px 12px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: var(--pad); display:none; }
+    pre { background: #fafafa; border: 1px solid #eee; padding: var(--pad); overflow:auto; }
+    .error { color: #b00020; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Weather Finder</h1>
+  <div class="muted">Enter a city. The page calls your Firebase Function and shows the result.</div>
+
+  <form id="form">
+    <input id="city" name="city" placeholder="e.g., Turin" required />
+    <select id="unit">
+      <option value="c">°C</option>
+      <option value="f">°F</option>
+    </select>
+    <button type="submit">Get Weather</button>
+  </form>
+
+  <div id="status" class="muted"></div>
+  <div id="error" class="error"></div>
+
+  <div id="result" class="card">
+    <div class="row">
+      <div>
+        <div><strong>City:</strong> <span id="name"></span></div>
+        <div><strong>Country:</strong> <span id="country"></span></div>
+        <div><strong>Time:</strong> <span id="time"></span></div>
+      </div>
+      <div>
+        <div><strong>Temperature:</strong> <span id="temp"></span></div>
+        <div><strong>Wind:</strong> <span id="wind"></span></div>
+        <div><strong>Code:</strong> <span id="code"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Raw JSON</h3>
+  <pre id="raw">–</pre>
+
+  <script>
+    // ⬇️ change this to match the URL printed by your emulator
+    const BASE = "http://127.0.0.1:5001/weather-fns-demo-1/europe-west1/getWeather";
+
+    const form = document.getElementById('form');
+    const cityInput = document.getElementById('city');
+    const unitSel = document.getElementById('unit');
+    const statusEl = document.getElementById('status');
+    const errorEl = document.getElementById('error');
+    const card = document.getElementById('result');
+    const raw = document.getElementById('raw');
+    const el = id => document.getElementById(id);
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.textContent = "";
+      statusEl.textContent = "Loading…";
+      card.style.display = "none";
+      raw.textContent = "–";
+
+      try {
+        const city = cityInput.value.trim();
+        if (!city) { throw new Error("Please enter a city."); }
+
+        const url = new URL(BASE);
+        url.searchParams.set("city", city);
+
+        const resp = await fetch(url, { method: "GET" });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
+
+        // unit toggle (client-side)
+        const cw = data.current || {};
+        let temperature = cw.temperature;
+        let unit = unitSel.value.toLowerCase(); // 'c' or 'f'
+        if (unit === 'f' && typeof temperature === 'number') {
+          temperature = (temperature * 9/5) + 32;
+        }
+        const unitLabel = unit === 'f' ? '°F' : '°C';
+
+        el('name').textContent = data.city ?? data.location?.city ?? "?";
+        el('country').textContent = data.country ?? data.location?.country ?? "?";
+        el('time').textContent = cw.time ?? "-";
+        el('temp').textContent = (typeof temperature === 'number' ? temperature.toFixed(1) : '-') + " " + unitLabel;
+        el('wind').textContent = cw.windspeed != null ? cw.windspeed + " m/s" : "-";
+        el('code').textContent = cw.weathercode ?? "-";
+
+        raw.textContent = JSON.stringify(data, null, 2);
+        statusEl.textContent = "";
+        card.style.display = "block";
+      } catch (err) {
+        statusEl.textContent = "";
+        errorEl.textContent = err.message || String(err);
+      }
+    });
+  </script>
+</body>
+</html>

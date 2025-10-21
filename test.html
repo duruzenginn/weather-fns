@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+  <meta charset="utf-8" />
+  <title>Weather Test</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:760px;margin:24px auto;padding:0 16px}
+    pre{background:#fafafa;border:1px solid #eee;padding:12px;overflow:auto}
+    .ok{color:#0a7f2e}.err{color:#b00020}
+  </style>
+  <h1>Weather Test (auto-fetch Turin)</h1>
+  <div id="status">Starting…</div>
+  <h3>Result</h3>
+  <pre id="out">—</pre>
+
+  <script>
+    // ⬇️ PASTE *EXACTLY* what your emulator prints for getWeather:
+    const BASE = "http://127.0.0.1:5001/weather-fns-demo-1/europe-west1/getWeather";
+
+    // show any unexpected script errors directly on the page
+    window.addEventListener('error', e => {
+      document.getElementById('status').className = 'err';
+      document.getElementById('status').textContent = 'Runtime error: ' + e.message;
+    });
+
+    (async () => {
+      const status = document.getElementById('status');
+      const out = document.getElementById('out');
+      try {
+        status.textContent = 'Fetching…';
+        const url = new URL(BASE);
+        url.searchParams.set('city', 'Turin');
+
+        const resp = await fetch(url.toString(), { method: 'GET' });
+        const text = await resp.text(); // read raw so we always see something
+        out.textContent = text;
+
+        if (resp.ok) {
+          status.className = 'ok';
+          status.textContent = 'Success ✅';
+        } else {
+          status.className = 'err';
+          status.textContent = `HTTP ${resp.status} ❌`;
+        }
+      } catch (err) {
+        status.className = 'err';
+        status.textContent = 'Fetch failed ❌ ' + (err && err.message ? err.message : String(err));
+      }
+    })();
+  </script>
+</html>
