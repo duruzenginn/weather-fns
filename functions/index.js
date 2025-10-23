@@ -23,6 +23,19 @@ exports.getWeather = onRequest(
         return r.json();
       };
 
+      // Robust Timestamp -> ms conversion (supports Firestore Timestamp and plain objects)
+      const tsToMillis = (t) => {
+        try {
+          if (!t) return 0;
+          if (typeof t.toMillis === "function") return t.toMillis();
+          if (typeof t._seconds === "number") {
+            const ms = (t._seconds * 1000) + Math.floor((t._nanoseconds || 0) / 1e6);
+            return ms;
+          }
+        } catch (_) { /* ignore */ }
+        return 0;
+      };
+
       const cityKey = city.toLowerCase();
       const docRef = db.collection("weatherCache").doc(cityKey);
 
@@ -33,8 +46,9 @@ exports.getWeather = onRequest(
 
       if (snap.exists) {
         const d = snap.data();
-        const age = now - (d.cachedAt?.toMillis?.() ?? 0);
-        if (age < TTL_MS && d.current && d.city && d.country) {
+        const cachedAtMs = tsToMillis(d.cachedAt);
+        const age = now - cachedAtMs;
+        if (cachedAtMs > 0 && age >= 0 && age < TTL_MS && d.current && d.city && d.country) {
           return res.json({ ok: true, cached: true, ...d, provider: "open-meteo.com" });
         }
       }
