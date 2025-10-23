@@ -32,8 +32,23 @@
     "ui": {
       "enabled": true
     }
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "functions/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/getWeather",
+        "function": {
+          "functionId": "getWeather",
+          "region": "europe-west1"
+        }
+      }
+    ]
   }
 }
-//for p in 8080 5001 4000 4400 4500; do
- // kill -9 $(lsof -tiTCP:$p -sTCP:LISTEN) 2>/dev/null
-//done

@@ -52,8 +52,10 @@
   <pre id="raw">–</pre>
 
   <script>
-    // ⬇️ change this to match the URL printed by your emulator
-    const BASE = "http://127.0.0.1:5001/weather-fns-demo-1/europe-west1/getWeather";
+    // Use Hosting rewrite when served on Firebase Hosting; otherwise fall back to the deployed Function URL.
+    const BASE = (location.hostname.endsWith('web.app') || location.hostname.endsWith('firebaseapp.com'))
+      ? "/api/getWeather"
+      : "https://europe-west1-weather-fns-demo-1.cloudfunctions.net/getWeather";
 
     const form = document.getElementById('form');
     const cityInput = document.getElementById('city');
@@ -75,7 +77,8 @@
         const city = cityInput.value.trim();
         if (!city) { throw new Error("Please enter a city."); }
 
-        const url = new URL(BASE);
+  // Support relative path on Hosting and absolute URL locally
+  const url = BASE.startsWith('http') ? new URL(BASE) : new URL(BASE, location.origin);
         url.searchParams.set("city", city);
 
         const resp = await fetch(url, { method: "GET" });

@@ -13,8 +13,10 @@
   <pre id="out">—</pre>
 
   <script>
-    // ⬇️ PASTE *EXACTLY* what your emulator prints for getWeather:
-    const BASE = "http://127.0.0.1:5001/weather-fns-demo-1/europe-west1/getWeather";
+    // Use Hosting rewrite on hosted site; fallback to the deployed Function URL otherwise.
+    const BASE = (location.hostname.endsWith('web.app') || location.hostname.endsWith('firebaseapp.com'))
+      ? "/api/getWeather"
+      : "https://europe-west1-weather-fns-demo-1.cloudfunctions.net/getWeather";
 
     // show any unexpected script errors directly on the page
     window.addEventListener('error', e => {
@@ -25,9 +27,9 @@
     (async () => {
       const status = document.getElementById('status');
       const out = document.getElementById('out');
-      try {
+  try {
         status.textContent = 'Fetching…';
-        const url = new URL(BASE);
+  const url = BASE.startsWith('http') ? new URL(BASE) : new URL(BASE, location.origin);
         url.searchParams.set('city', 'Turin');
 
         const resp = await fetch(url.toString(), { method: 'GET' });
